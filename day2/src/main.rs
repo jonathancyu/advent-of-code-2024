@@ -68,8 +68,39 @@ fn part_one() {
         .count();
     println!("Compliant reports: {matches}");
 }
+fn is_safe_lenient(report: Vec<u32>) -> bool {
+    if is_safe(report.clone()) {
+        return true;
+    }
 
-fn part_two() {}
+    for index in (0..report.len()) {
+        let sub_report = report
+            .iter()
+            .enumerate()
+            .filter(|&(i, _)| i != index)
+            .map(|(_, val)| *val)
+            .collect::<Vec<u32>>();
+        if is_safe(sub_report) {
+            return true;
+        }
+    }
+    false
+}
+
+fn part_two() {
+    let args: Vec<String> = env::args().collect();
+    println!("{:?}", args);
+    assert_eq!(2, args.len());
+    let file_path = args.get(1).unwrap();
+    let file = fs::read_to_string(file_path).expect("Unable to read file");
+    let matches = file
+        .lines()
+        .map(split_line)
+        .map(is_safe_lenient)
+        .filter(|x| *x)
+        .count();
+    println!("Compliant reports: {matches}");
+}
 
 fn main() -> std::io::Result<()> {
     part_one();
