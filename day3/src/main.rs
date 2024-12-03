@@ -3,7 +3,7 @@ use std::{env, fs};
 use regex::Regex;
 
 fn get_functions(text: &str) -> Vec<&str> {
-    let re = Regex::new(r"[a-z][a-z0-9_]+\(([0-9]+,[0-9]+)?\)").unwrap();
+    let re = Regex::new(r"[a-z][a-z0-9_']+\(([0-9]+,[0-9]+)?\)").unwrap();
     re.find_iter(text).map(|m| m.as_str()).collect()
 }
 
@@ -31,7 +31,25 @@ fn part_one() {
     println!("Total: {}", total);
 }
 
-fn part_two() {}
+fn part_two() {
+    let args: Vec<String> = env::args().collect();
+    println!("{:?}", args);
+    assert_eq!(2, args.len());
+    let file_path = args.get(1).unwrap();
+    let file = fs::read_to_string(file_path).expect("Unable to read file");
+    let mut total = 0;
+    let mut do_mul = true;
+    get_functions(file.as_str()).iter().for_each(|f| {
+        if f.contains("do(") {
+            do_mul = true;
+        } else if f.contains("don't(") {
+            do_mul = false;
+        } else if f.starts_with("mul(") && do_mul {
+            total += compute(f);
+        }
+    });
+    println!("Total: {}", total);
+}
 
 fn main() -> std::io::Result<()> {
     part_one();
