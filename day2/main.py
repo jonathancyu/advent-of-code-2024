@@ -10,7 +10,9 @@ inc_range = range(1, 4)
 dec_range = range(-1, -4, -1)
 
 
-def safe_report(report: list[int], increasing: bool | None = None) -> bool:
+def safe_report(
+    report: list[int], increasing: bool | None = None, skipped: bool = False
+) -> bool:
     if len(report) <= 1:
         return True
     prev = report[0]
@@ -23,13 +25,21 @@ def safe_report(report: list[int], increasing: bool | None = None) -> bool:
             increasing = True
         elif dec:
             increasing = False
-        else:  # Not allowed
+        elif not skipped:
+            # Only occurs when increasing is none, which only happens on first occurrence
+            return safe_report(report[1:], skipped=True)
+        else:
             return False
 
     if (increasing and not inc) or (not increasing and not dec):
+        if not skipped:
+            # Try to skip this value
+            # [prev, next, ...] -> next is in violation, so skip next.
+            spliced_report = report[:1] + report[2:]
+            return safe_report(spliced_report, skipped=True)
         return False
 
-    return safe_report(report[1:], increasing)
+    return safe_report(report[1:], increasing, skipped)
 
 
 if __name__ == "__main__":
@@ -40,5 +50,7 @@ if __name__ == "__main__":
         lines = f.readlines()
     reports = [parse_report(line) for line in lines]
     # print(reports)
-    passing = [report for report in reports if safe_report(report)]
-    print(len(passing))
+    part_one = len([report for report in reports if safe_report(report, skipped=True)])
+    print(f"Part 1: {part_one}")
+    part_two = len([report for report in reports if safe_report(report)])
+    print(f"Part 2: {part_two}")
