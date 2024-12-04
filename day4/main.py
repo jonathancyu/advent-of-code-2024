@@ -67,6 +67,22 @@ def match_direction(
     return True
 
 
+def match_xmax(matrix, pos):
+
+    i, j = pos
+    X = len(matrix)
+    Y = len(matrix[0])
+
+    if not 0 < i < X - 1 or not 0 < j < Y - 1:
+        return False
+    diag_1 = matrix[i - 1][j - 1] + matrix[i][j] + matrix[i + 1][j + 1]  # /
+    diag_2 = matrix[i - 1][j + 1] + matrix[i][j] + matrix[i + 1][j - 1]  # /
+    if matrix[i][j] == "A":
+        print(diag_1, diag_2)
+
+    return diag_1 in ["MAS", "SAM"] and diag_2 in ["MAS", "SAM"]
+
+
 def count_easy_occurrences(matrix: list[list[str]], word: str, pos: tuple[int, int]):
     p_i, p_j = pos
     count = 0
@@ -83,11 +99,8 @@ def count_occurrences(matrix: list[list[str]], word: str) -> int:
     total = 0
     for i in range(X):
         for j in range(Y):
-            num_matches = count_easy_occurrences(matrix, word, (i, j))
-
-            if num_matches > 0:
-                print(f"matrix[{i}][{j}] = {num_matches}")
-            total += num_matches
+            if match_xmax(matrix, (i, j)):
+                total += 1
     return total
 
 
