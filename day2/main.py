@@ -9,8 +9,11 @@ def parse_report(line: str) -> list[int]:
 inc_range = range(1, 4)
 dec_range = range(-1, -4, -1)
 
+lookup: dict[tuple[tuple[int, ...], bool | None, bool], bool] = {}
 
-def safe_report_wrapper(report: list[int]):
+
+def safe_report_base_case(report: list[int]):
+    # TODO: i dont wanna need this
     return (
         safe_report(report, None, False)
         or safe_report(report[:1] + report[2:], None, True)
@@ -21,47 +24,56 @@ def safe_report_wrapper(report: list[int]):
 def safe_report(
     report: list[int], increasing: bool | None = None, skipped: bool = False
 ) -> bool:
-    print(f"trying  {report}, skip={skipped}, inc={increasing}")
+    """
+    Recursive backtracking. Could also have been implemented with a graph search (DFS/BFS)
+    """
+    key = (tuple(report), increasing, skipped)
+    if key in lookup:
+        # Lookup cached value to prevent re-visiting nodes
+        return lookup[key]
     prev = report[0]
     curr = report[1]
     diff = curr - prev
     inc = diff in inc_range
     dec = diff in dec_range
 
-    if len(report) == 2:
-        assert increasing is not None  # problem specific, oh well
+    if len(report) <= 2:
         result = (increasing and inc) or (not increasing and dec)
-        print(f" 2 -> {result}")
-        return (not skipped) or (increasing and inc) or (not increasing and dec)
-    assert len(report) > 2
+        lookup[key] = result
+        return result
 
     original_increasing = increasing
 
     if increasing is None:
         if inc:
-            # print(1)
             increasing = True
         elif dec:
-            # print(2)
             increasing = False
 
-    print(f"   inc: {increasing}")
+    result = None
     if (
         increasing is not None
         and (increasing and not inc)
         or (not increasing and not dec)
     ):
-        print("   non compliant")
-        return False
-
-    return safe_report(report[1:], increasing, skipped) or (
-        not skipped
-        and safe_report(
-            report[:1] + report[2:],
-            original_increasing,
-            True,  # If current not safe, remove it.
+        # End recursion if we fail a test.
+        result = False
+    elif skipped:
+        result = safe_report(report[1:], increasing, skipped)  # Can't use a skip
+    else:
+        result = (
+            # Try to not use a skip
+            safe_report(report[1:], increasing, False)
+            # Skip first
+            or safe_report(report[1:], original_increasing, True)
+            # Skip second
+            or safe_report(report[:1] + report[2:], original_increasing, True)
+            # Skip third
+            or safe_report(report[:2] + report[3:], original_increasing, True)
         )
-    )
+
+    lookup[key] = result
+    return result
 
 
 def read_expected() -> dict[str, bool]:
@@ -87,20 +99,18 @@ if __name__ == "__main__":
     with open(file, "r") as f:
         lines = f.readlines()
     reports = [parse_report(line) for line in lines]
-    # print(reports)
-    # part_one = len([report for report in reports if safe_report(report, skipped=True)])
-    # print(f"Part 1: {part_one}")
+    # Part one
+    part_one = len([report for report in reports if safe_report(report, skipped=True)])
+    print(f"Part 1: {part_one}")
+
+    # Part two
     expected: dict[str, bool] = read_expected()
     actual: dict[str, bool] = {}
     for report in reports:
-        print()
-        print()
         key = " ".join(str(x) for x in report)
-        actual[key] = safe_report_wrapper(report)
+        actual[key] = safe_report_base_case(report)
         if expected[key] != actual[key]:
-            print(f"zOOO {report}")
             print(f"{key}: expected {expected[key]}, got {actual[key]}")
-            print()
 
-    part_two = len([report for report in reports if safe_report_wrapper(report)])
+    part_two = len([report for report in reports if safe_report_base_case(report)])
     print(f"Part 2: {part_two}")
