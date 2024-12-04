@@ -10,18 +10,33 @@ inc_range = range(1, 4)
 dec_range = range(-1, -4, -1)
 
 
+def safe_report_wrapper(report: list[int]):
+    return (
+        safe_report(report, None, False)
+        or safe_report(report[:1] + report[2:], None, True)
+        or safe_report(report[1:], None, True)
+    )
+
+
 def safe_report(
     report: list[int], increasing: bool | None = None, skipped: bool = False
 ) -> bool:
-    # print(f"  {skipped}, {report}")
-    if len(report) <= 1:
-        return True
+    print(f"trying  {report}, skip={skipped}, inc={increasing}")
     prev = report[0]
     curr = report[1]
     diff = curr - prev
     inc = diff in inc_range
     dec = diff in dec_range
+
+    if len(report) == 2:
+        assert increasing is not None  # problem specific, oh well
+        result = (increasing and inc) or (not increasing and dec)
+        print(f" 2 -> {result}")
+        return (not skipped) or (increasing and inc) or (not increasing and dec)
+    assert len(report) > 2
+
     original_increasing = increasing
+
     if increasing is None:
         if inc:
             # print(1)
@@ -29,18 +44,23 @@ def safe_report(
         elif dec:
             # print(2)
             increasing = False
-        else:
-            # print(3)
-            return False
 
-    if (increasing and not inc) or (not increasing and not dec):
+    print(f"   inc: {increasing}")
+    if (
+        increasing is not None
+        and (increasing and not inc)
+        or (not increasing and not dec)
+    ):
+        print("   non compliant")
         return False
 
     return safe_report(report[1:], increasing, skipped) or (
         not skipped
         and safe_report(
-            report[1:], original_increasing, True
-        )  # If current not safe, remove it.
+            report[:1] + report[2:],
+            original_increasing,
+            True,  # If current not safe, remove it.
+        )
     )
 
 
@@ -73,17 +93,14 @@ if __name__ == "__main__":
     expected: dict[str, bool] = read_expected()
     actual: dict[str, bool] = {}
     for report in reports:
-        print("-" * 100)
+        print()
+        print()
         key = " ".join(str(x) for x in report)
-        actual[key] = safe_report(report)
+        actual[key] = safe_report_wrapper(report)
+        if expected[key] != actual[key]:
+            print(f"zOOO {report}")
+            print(f"{key}: expected {expected[key]}, got {actual[key]}")
+            print()
 
-    # Compare and print differences
-    diffs = []
-    for key in expected:
-        if key in actual and expected[key] != actual[key]:
-            diffs.append(f"{key}: expected {expected[key]}, got {actual[key]}")
-    print("\n".join(diffs))
-    print(len(diffs))
-
-    # part_two = len([report for report in reports if safe_report(report)])
-    # print(f"Part 2: {part_two}")
+    part_two = len([report for report in reports if safe_report_wrapper(report)])
+    print(f"Part 2: {part_two}")

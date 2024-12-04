@@ -60,23 +60,12 @@ fn part_one() {
     assert_eq!(2, args.len());
     let file_path = args.get(1).unwrap();
     let file = fs::read_to_string(file_path).expect("Unable to read file");
-    let mut lines: Vec<String> = vec![];
     let matches = file
         .lines()
         .map(split_line)
-        .map(|record| {
-            let result = is_safe(record.clone());
-            let lhs = record
-                .iter()
-                .map(|n| n.to_string())
-                .collect::<Vec<String>>()
-                .join(" ");
-            lines.push(format!("{} = {}", lhs, result));
-            result
-        })
+        .map(is_safe)
         .filter(|x| *x)
         .count();
-    fs::write("test.txt", lines.join("\n")).unwrap();
     println!("Compliant reports: {matches}");
 }
 fn is_safe_lenient(report: Vec<u32>) -> bool {
@@ -104,12 +93,23 @@ fn part_two() {
     assert_eq!(2, args.len());
     let file_path = args.get(1).unwrap();
     let file = fs::read_to_string(file_path).expect("Unable to read file");
+    let mut lines: Vec<String> = vec![];
     let matches = file
         .lines()
         .map(split_line)
-        .map(is_safe_lenient)
+        .map(|record| {
+            let result = is_safe_lenient(record.clone());
+            let lhs = record
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<String>>()
+                .join(" ");
+            lines.push(format!("{} = {}", lhs, result));
+            result
+        })
         .filter(|x| *x)
         .count();
+    fs::write("test.txt", lines.join("\n")).unwrap();
     println!("Compliant reports: {matches}");
 }
 
