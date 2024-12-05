@@ -31,7 +31,7 @@ class Node:
         values = []
 
         while current is not None:
-            values.append(str(current.val))
+            values.append(current.val)
             current = current.next
         return values
 
@@ -75,29 +75,38 @@ def get_midpoint(head: Node) -> int:
 
 
 def topo_sort(edges: list[tuple[int, int]], values: list[int]) -> list[int]:
+    print("-" * 10)
+    print(edges)
+    print(values)
     outgoing_edges = defaultdict(list)
+    incoming_edges = defaultdict(list)
     for src, dst in edges:
         outgoing_edges[src].append(dst)
+        incoming_edges[dst].append(src)
 
-    result = []
-    visited = set()
+    last_to_first_visited = deque()
+    visited = []
 
     def dfs(node: int):
         if node in visited:
             return
-        visited.add(node)
+        print("vi", node)
+        visited.append(node)
         for dst in outgoing_edges[node]:
+            print(node, dst)
             dfs(dst)
-        result.append(node)
+        last_to_first_visited.append(node)
+
 
     # dfs from each orphan node
     for value in values:
-        if value in outgoing_edges:
+        if len(incoming_edges[value]) > 0:
             continue
         print(f"root: {value}")
         dfs(value)
 
-    # Append unvisited nodes to the end
+    # assert len(visited) == len(values)
+    result = list(reversed(list(last_to_first_visited)))
     print(result)
     return result
 
@@ -106,12 +115,11 @@ def fix_sequence(rules: list[tuple[int, int]], report: Node):
     values = report.values()
     edges: list[tuple[int, int]] = []  # Edge from A -> B means B must come after A
     for rule in rules:
-        print(rule)
         a, b = rule
-        # TODO: one or two edges?
-        if a in values or b in values:
+        if a in values and b in values:
             edges.append(rule)
     sorted = topo_sort(edges, values)
+    print(f"sorted: {sorted}")
     return get_midpoint(Node.from_list(sorted))  # XD
 
 
@@ -131,11 +139,11 @@ if __name__ == "__main__":
         if "|" in line:
             split = line.split("|")
             assert len(split) == 2
-            pre, post = split
-            a, b = int(pre), int(post)
+            a, b = split
+            a, b = int(a), int(b)
+            rules.append((a, b))
             predecessors[b].add(a)
         elif "," in line:
-
             reports.append(Node.from_list([int(x) for x in line.split(",")]))
 
     # Part 1
