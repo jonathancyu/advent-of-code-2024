@@ -4,7 +4,7 @@ from pathlib import Path
 from itertools import product
 from dataclasses import dataclass
 from collections import defaultdict, deque
-from typing import Optional
+from typing import Counter, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm.auto import tqdm
 
@@ -59,15 +59,60 @@ def check_update(rules: dict[int, set[int]], update_head: Node) -> Optional[int]
         seen.add(value)
         current = current.next
 
+    return get_midpoint(update_head)
+
+
+def get_midpoint(head: Node) -> int:
     # Get midpoint
-    slow = fast = update_head
+    slow = fast = head
     while fast.next and fast.next.next:
         assert slow.next is not None
         slow = slow.next
         fast = fast.next.next
     midpoint = slow
-    assert midpoint is not None
+    assert midpoint is not None and midpoint.val is not Node
     return midpoint.val
+
+
+def topo_sort(edges: list[tuple[int, int]], values: list[int]) -> list[int]:
+    outgoing_edges = defaultdict(list)
+    for src, dst in edges:
+        outgoing_edges[src].append(dst)
+
+    result = []
+    visited = set()
+
+    def dfs(node: int):
+        if node in visited:
+            return
+        visited.add(node)
+        for dst in outgoing_edges[node]:
+            dfs(dst)
+        result.append(node)
+
+    # dfs from each orphan node
+    for value in values:
+        if value in outgoing_edges:
+            continue
+        print(f"root: {value}")
+        dfs(value)
+
+    # Append unvisited nodes to the end
+    print(result)
+    return result
+
+
+def fix_sequence(rules: list[tuple[int, int]], report: Node):
+    values = report.values()
+    edges: list[tuple[int, int]] = []  # Edge from A -> B means B must come after A
+    for rule in rules:
+        print(rule)
+        a, b = rule
+        # TODO: one or two edges?
+        if a in values or b in values:
+            edges.append(rule)
+    sorted = topo_sort(edges, values)
+    return get_midpoint(Node.from_list(sorted))  # XD
 
 
 if __name__ == "__main__":
@@ -79,14 +124,16 @@ if __name__ == "__main__":
 
     length: int | None = None
     matrix = []
-    rules: dict[int, set[int]] = defaultdict(set)
+    rules: list[tuple[int, int]] = []
+    predecessors: dict[int, set[int]] = defaultdict(set)
     reports: list[Node] = []
     for line in lines:
         if "|" in line:
             split = line.split("|")
             assert len(split) == 2
             pre, post = split
-            rules[int(post)].add(int(pre))
+            a, b = int(pre), int(post)
+            predecessors[b].add(a)
         elif "," in line:
 
             reports.append(Node.from_list([int(x) for x in line.split(",")]))
@@ -94,10 +141,24 @@ if __name__ == "__main__":
     # Part 1
     total = 0
     for report in reports:
-        result = check_update(rules, report)
+        result = check_update(predecessors, report)
         if result is not None:
             total += result
     print(f"part 1: {total}")
+
+    total = 0
+    for report in reports:
+        if check_update(predecessors, report) is not None:
+            continue
+        result = fix_sequence(rules, report)
+        total += result
+    print(f"part 2: {total}")
+
+
+def part_2_bogo(rules, report):
+    """
+    Bogo sort.
+    """
 
     def process_report(report: Node) -> Optional[int]:
         result = check_update(rules, report)
@@ -129,5 +190,3 @@ if __name__ == "__main__":
             result = future.result()
             if result is not None:
                 total += result
-
-    print(f"part 2: {total}")
