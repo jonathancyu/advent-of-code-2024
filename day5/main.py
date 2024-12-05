@@ -1,9 +1,12 @@
 from argparse import ArgumentParser
+from random import shuffle
 from pathlib import Path
 from itertools import product
 from dataclasses import dataclass
 from collections import defaultdict, deque
 from typing import Optional
+
+from tqdm.auto import tqdm
 
 
 @dataclass
@@ -16,13 +19,11 @@ class Node:
         head_pointer = Node()
         current = head_pointer
         for value in lst:
-            current.next = Node(val=value)
+            current.next = Node(val=int(value))
             current = current.next
 
         assert head_pointer.next is not None
         return head_pointer.next
-
-
 
     def values(self):
         # Skip the head pointer if it has no value
@@ -88,7 +89,7 @@ if __name__ == "__main__":
             rules[int(post)].add(int(pre))
         elif "," in line:
 
-            reports.append(Node.from_list([int(x) for x in line.split(',')]))
+            reports.append(Node.from_list([int(x) for x in line.split(",")]))
 
     # Part 1
     total = 0
@@ -100,13 +101,24 @@ if __name__ == "__main__":
 
     # Part 2
     total = 0
-    for report in reports:
+    for report in tqdm(reports):
         result = check_update(rules, report)
-        if result != None:
+        if result is not None:
             # Skip working
             continue
-        # shuffled =
-        # while
+        tried = set()
+        while True:
+            values = report.values()
+            shuffle(values)
+            tuple_vals = tuple(values)
+            if tuple_vals in tried:
+                continue
+            shuffled = Node.from_list(values)
+            result = check_update(rules, shuffled)
+            if result is not None:
+                print(type(result), result)
+                total += result
+                break
+            tried.add(tuple_vals)
 
-
-
+    print(f"part 2: {total}")
