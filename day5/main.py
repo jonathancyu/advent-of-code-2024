@@ -11,18 +11,28 @@ class Node:
     val: Optional[int] = None
     next: Optional["Node"] = None
 
+    @classmethod
+    def from_list(cls, lst: list[int]) -> "Node":
+        head_pointer = Node()
+        current = head_pointer
+        for value in lst:
+            current.next = Node(val=value)
+            current = current.next
 
-def print_list(node: Optional[Node]):
-    if node is None:
-        print("null list")
-        return
-    # Skip the head pointer if it has no value
-    current = node.next if node.val is None else node
-    values = []
+        assert head_pointer.next is not None
+        return head_pointer.next
 
-    while current is not None:
-        values.append(str(current.val))
-        current = current.next
+
+
+    def values(self):
+        # Skip the head pointer if it has no value
+        current = self.next if self.val is None else self
+        values = []
+
+        while current is not None:
+            values.append(str(current.val))
+            current = current.next
+        return values
 
 
 def check_update(rules: dict[int, set[int]], update_head: Node) -> Optional[int]:
@@ -39,7 +49,6 @@ def check_update(rules: dict[int, set[int]], update_head: Node) -> Optional[int]
     while current:
         assert current.val is not None
         value = current.val
-        print(value)
         if value in rules:
             for predecessor in rules[value]:
                 if predecessor not in elements:
@@ -72,27 +81,32 @@ if __name__ == "__main__":
     rules: dict[int, set[int]] = defaultdict(set)
     reports: list[Node] = []
     for line in lines:
-        print(line)
         if "|" in line:
             split = line.split("|")
             assert len(split) == 2
             pre, post = split
             rules[int(post)].add(int(pre))
         elif "," in line:
-            head_pointer = Node()
-            current = head_pointer
-            for value in line.strip().split(","):
-                current.next = Node(val=int(value.strip()))
-                current = current.next
 
-            assert head_pointer.next is not None
-            reports.append(head_pointer.next)
+            reports.append(Node.from_list([int(x) for x in line.split(',')]))
 
+    # Part 1
     total = 0
     for report in reports:
-        print_list(report.next)
         result = check_update(rules, report)
         if result is not None:
             total += result
+    print(f"part 1: {total}")
 
-    print(f"result: {total}")
+    # Part 2
+    total = 0
+    for report in reports:
+        result = check_update(rules, report)
+        if result != None:
+            # Skip working
+            continue
+        # shuffled =
+        # while
+
+
+
