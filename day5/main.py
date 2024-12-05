@@ -5,7 +5,7 @@ from itertools import product
 from dataclasses import dataclass
 from collections import defaultdict, deque
 from typing import Optional
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm.auto import tqdm
 
 
@@ -99,13 +99,12 @@ if __name__ == "__main__":
             total += result
     print(f"part 1: {total}")
 
-    # Part 2
-    total = 0
-    for report in tqdm(reports):
+    def process_report(report: Node) -> Optional[int]:
         result = check_update(rules, report)
         if result is not None:
-            # Skip working
-            continue
+            # Passed initially, so ignore it
+            return None
+
         tried = set()
         while True:
             values = report.values()
@@ -116,9 +115,19 @@ if __name__ == "__main__":
             shuffled = Node.from_list(values)
             result = check_update(rules, shuffled)
             if result is not None:
-                print(type(result), result)
-                total += result
-                break
+                return result
             tried.add(tuple_vals)
+
+    # Part 2
+    total = 0
+    with ThreadPoolExecutor() as executor:
+        future_to_report = {
+            executor.submit(process_report, report): report for report in reports
+        }
+
+        for future in tqdm(as_completed(future_to_report), total=len(reports)):
+            result = future.result()
+            if result is not None:
+                total += result
 
     print(f"part 2: {total}")
