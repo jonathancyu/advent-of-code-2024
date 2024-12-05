@@ -75,9 +75,6 @@ def get_midpoint(head: Node) -> int:
 
 
 def topo_sort(edges: list[tuple[int, int]], values: list[int]) -> list[int]:
-    print("-" * 10)
-    print(edges)
-    print(values)
     outgoing_edges = defaultdict(list)
     incoming_edges = defaultdict(list)
     for src, dst in edges:
@@ -90,24 +87,19 @@ def topo_sort(edges: list[tuple[int, int]], values: list[int]) -> list[int]:
     def dfs(node: int):
         if node in visited:
             return
-        print("vi", node)
         visited.append(node)
         for dst in outgoing_edges[node]:
-            print(node, dst)
             dfs(dst)
         last_to_first_visited.append(node)
-
 
     # dfs from each orphan node
     for value in values:
         if len(incoming_edges[value]) > 0:
             continue
-        print(f"root: {value}")
         dfs(value)
 
     # assert len(visited) == len(values)
     result = list(reversed(list(last_to_first_visited)))
-    print(result)
     return result
 
 
@@ -119,7 +111,6 @@ def fix_sequence(rules: list[tuple[int, int]], report: Node):
         if a in values and b in values:
             edges.append(rule)
     sorted = topo_sort(edges, values)
-    print(f"sorted: {sorted}")
     return get_midpoint(Node.from_list(sorted))  # XD
 
 
@@ -198,3 +189,4 @@ def part_2_bogo(rules, report):
             result = future.result()
             if result is not None:
                 total += result
+    print(f"part 2: {total}")
