@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from copy import deepcopy
 from random import shuffle
 from pathlib import Path
 from itertools import product
@@ -25,13 +26,18 @@ def rotate(i, j):
 
 def part_one(
     matrix: list[list[str]], pos: tuple[int, int], dir: tuple[int, int]
-) -> int:
+) -> set:
     X, Y = len(matrix), len(matrix[0])
     pos_visited = set()
+    visited = set()
     while True:
         # print(pos, dir)
         # print_mat(matrix, pos)
+        if (pos, dir) in visited:
+            return None
+
         pos_visited.add(pos)
+        visited.add((pos, dir))
         p_i, p_j = pos
         matrix[p_i][p_j] = "X"
         d_i, d_j = dir
@@ -46,59 +52,32 @@ def part_one(
             d_i, d_j = dir
             x, y = p_i + d_i, p_j + d_j
             if not 0 <= x < X or not 0 <= y < Y:
-                return len(pos_visited)
+                return pos_visited
             next = matrix[x][y]
 
         pos = (x, y)
-    return len(pos_visited)
+    return pos_visited
+
+
+def add_obs(matrix: list[list[str]], pos: tuple[int, int]) -> list[list[str]]:
+    matrix = deepcopy(matrix)
+    x, y = pos
+    matrix[x][y] = "#"
+    return matrix
 
 
 def part_two(
-    matrix: list[list[str]], pos: tuple[int, int], dir: tuple[int, int]
+    visited: set[tuple[int, int]],
+    matrix: list[list[str]],
+    start_pos: tuple[int, int],
+    dir: tuple[int, int],
 ) -> int:
-    X, Y = len(matrix), len(matrix[0])
-    directions_needed: dict[tuple[int, int], set[tuple[int, int]]] = defaultdict(set)
-    obstructions = set()
-    while True:
-        # print(pos, dir)
-        # print_mat(matrix, pos)
-        p_i, p_j = pos
-        matrix[p_i][p_j] = "X"
-        d_i, d_j = dir
-        x, y = p_i + d_i, p_j + d_j
-        if not 0 <= x < X or not 0 <= y < Y:
-            break
-        next = matrix[x][y]
-        # Rotate inplace til we get a good direction
-        while next == "#":
-            # Project away from wall
-            opposite_dir = (-d_i, -d_j)
-            x, y = pos
-            while 0 <= x < X and 0 <= y < Y and matrix[x][y] != "#":
-                directions_needed[(x, y)].add(dir)
-                x -= d_i
-                y -= d_j
-
-            # Rotate til no wall
-            dir = (d_j, -d_i)
-            d_i, d_j = dir
-            x, y = p_i + d_i, p_j + d_j
-            if not 0 <= x < X or not 0 <= y < Y:
-                return len(obstructions)
-            next = matrix[x][y]
-
-        # If next is a free square, then see if we can cause a loop
-        rotated = rotate(*dir)
-        if rotated in directions_needed[pos]:
-            matrix[x][y] = "O"
-            obstructions.add((x, y))
-        directions_needed[pos].add(dir)
-
-        pos = (x, y)
-
-    for x, y in obstructions:
-        matrix[x][y] = "O"
-    return len(obstructions)
+    count = 0
+    for pos in visited:
+        test = add_obs(matrix, pos)
+        if part_one(test, start_pos, dir) is None:
+            count += 1
+    return count
 
 
 if __name__ == "__main__":
@@ -119,5 +98,7 @@ if __name__ == "__main__":
             row.append(char)
         matrix.append(row)
     assert pos is not None
-    # print(f"Part one: {part_one(matrix, pos, direction)}")
-    print(f"Part two: {part_two(matrix, pos, direction)}")
+    visited = part_one(matrix, pos, direction)
+    print(f"Part one: {len(visited)}")
+
+    print(f"Part two: {part_two(visited, matrix, pos, direction)}")
