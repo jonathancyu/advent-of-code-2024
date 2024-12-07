@@ -26,11 +26,12 @@ class Equation:
 def sat(left: int, right: list[int]) -> bool:
     if len(right) == 1:
         return left == right[0]
-    # Try adding
     current, next = right[:2]
     remaining = right[2:]
-    return sat(left, [current * next] + remaining) or sat(
-        left, [current + next] + remaining
+    return (
+        sat(left, [current * next] + remaining)
+        or sat(left, [current + next] + remaining)
+        or sat(left, [int(f"{current}{next}")] + remaining)
     )
 
 
