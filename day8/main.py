@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 from typing import Callable, Counter, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm.auto import tqdm
+import math
 
 Point = tuple[int, int]
 
@@ -44,6 +45,54 @@ def part_one(matrix: list[list[str]]) -> int:
     return len(antinodes)
 
 
+def part_two(matrix: list[list[str]]) -> int:
+    X, Y = len(matrix), len(matrix[0])
+
+    frequency_lookup: dict[str, list[Point]] = defaultdict(list)
+    for i, row in enumerate(matrix):
+        for j, val in enumerate(row):
+            if val.isalnum():
+                frequency_lookup[val].append((i, j))
+
+    antinodes = set()
+    for _, positions in frequency_lookup.items():
+        for a, b in product(positions, positions):
+            if a == b:
+                continue
+            a_x, a_y = a
+            b_x, b_y = b
+            d_x = a_x - b_x
+            d_y = a_y - b_y
+            gcd = math.gcd(d_x, d_y)
+            assert int(gcd) == gcd
+            d_x = int(d_x / gcd)
+            d_y = int(d_y / gcd)
+
+            x_1 = b_x + d_x
+            y_1 = b_y + d_y
+            while 0 <= x_1 < X and 0 <= y_1 < Y:
+                antinodes.add((x_1, y_1))
+                x_1 += d_x
+                y_1 += d_y
+
+            x_2 = a_x - d_x
+            y_2 = a_y - d_y
+            while 0 <= x_2 < X and 0 <= y_2 < Y:
+                matrix[x_2][y_2] = "#"
+                antinodes.add((x_2, y_2))
+                x_2 -= d_x
+                y_2 -= d_y
+
+    total = 0
+    for row in matrix:
+        print(row)
+        for col in row:
+            if col == "#":
+                total += 1
+
+    return len(antinodes)
+
+
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("-f", "--file", type=Path)
@@ -58,5 +107,5 @@ if __name__ == "__main__":
             row.append(char)
         matrix.append(row)
 
-    print(f"Part one: {part_one(matrix)}")
-    # print(f"Part two: {part_two}")
+    print(f"Part one: {part_one(deepcopy(matrix))}")
+    print(f"Part two: {part_two(deepcopy(matrix))}")
