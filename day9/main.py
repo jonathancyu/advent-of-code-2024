@@ -56,8 +56,89 @@ def part_one(numbers: list[int]) -> int:
     return sum([i * val for i, val in enumerate(data) if val is not None])
 
 
-def part_two(matrix: list[list[str]]) -> int:
-    return 0
+def part_two(sizes: list[int]) -> int:
+    # Parse data positions
+    on_data = True
+    data = []
+    empty_positions = deque()
+    files = deque()
+    data_index = 0
+    for size in sizes:
+        # print(f"{number}: {on_data}")
+        if on_data:
+            files.append((len(data), size))
+            for _ in range(size):
+                data.append(data_index)
+            data_index += 1
+        else:
+            for _ in range(size):
+                empty_positions.append(len(data))
+                data.append(None)
+
+        on_data = not on_data
+    print(files)
+    print(empty_positions)
+    print_data(data)
+
+    # Re-organize
+    while files:
+        print()
+        print()
+        print(files)
+        print(empty_positions)
+        file_start, size = files.pop()
+
+        print(data[file_start], size)
+        pos = empty_positions.popleft()
+        tries = deque()
+        current_start = pos
+        current_word = [pos]
+        while pos < file_start and empty_positions:
+            if len(current_word) == size:
+                # Insert and break
+                start = current_word[0]
+                for pos in current_word:
+                    d = pos - start
+                    file_pos = file_start + d
+                    print(f"Swapping {pos} and {file_pos}")
+                    data[pos] = data[file_pos]
+                    data[file_pos] = None
+                    print_data(data)
+                current_word = []  # Remove so we don't re-add then
+                break
+
+            assert data[pos] is None
+            next_pos = empty_positions.popleft()
+            if next_pos != pos + 1:
+                tries.extend(current_word)
+                current_start = pos
+                current_word = [next_pos]
+            else:
+                current_word.append(next_pos)
+            print(f"Trying {pos}, word = {current_word}, tries = {list(tries)}")
+            pos = next_pos
+
+        tries.extend(current_word)
+        print("tries", tries)
+        # Put everything back into the queue
+        while tries:
+            pos = tries.pop()
+            print(f"adding {pos} ({data[pos]})")
+            empty_positions.insert(0, pos)
+        print_data(data)
+
+    while empty_positions and files:
+        empty_pos = empty_positions.popleft()
+        assert data[empty_pos] is None
+        data_pos = files.pop()
+        if empty_pos > data_pos:
+            break
+        data[empty_pos] = data[data_pos]
+        data[data_pos] = None
+        # print_data(data)
+
+    # Calculate result
+    return sum([i * val for i, val in enumerate(data) if val is not None])
 
 
 if __name__ == "__main__":
@@ -71,4 +152,4 @@ if __name__ == "__main__":
     # print(map)
 
     print(f"Part one: {part_one(map)}")
-    # print(f"Part two: {part_two(deepcopy(matrix))}")
+    print(f"Part two: {part_two(map)}")
