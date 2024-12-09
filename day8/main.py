@@ -79,6 +79,7 @@ def part_two(matrix: list[list[str]]) -> int:
             y_2 = a_y - d_y
             while 0 <= x_2 < X and 0 <= y_2 < Y:
                 matrix[x_2][y_2] = "#"
+                print("\n".join(["".join(line) for line in matrix]))
                 antinodes.add((x_2, y_2))
                 x_2 -= d_x
                 y_2 -= d_y
