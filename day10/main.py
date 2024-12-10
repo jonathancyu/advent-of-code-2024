@@ -23,7 +23,7 @@ directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 @dataclass
 class Result:
     points: set[Point]
-    paths: list[list[Point]]
+    paths: set[tuple[Point, ...]]
 
 
 def print_path(map, paths):
@@ -38,14 +38,14 @@ def print_path(map, paths):
 def part_one(map: list[list[int]], trailheads: list[Point]) -> int:
     X, Y = len(map), len(map[0])
     # Parse data positions
-    total = 0
+    total_points = 0
+    total_paths = 0
     for start in trailheads:
-        visited = set()
-        result = Result(set(), [])
+        result = Result(set(), set())
 
         def dfs(pos: Point, path: list[Point] | None = None):
             x, y = pos
-            if pos in visited or not 0 <= x < X or not 0 <= y < Y:
+            if (path is not None and pos in path) or not 0 <= x < X or not 0 <= y < Y:
                 return
             height = map[x][y]
 
@@ -60,11 +60,10 @@ def part_one(map: list[list[int]], trailheads: list[Point]) -> int:
                     return
             path = path + [pos]
             if height == 9:
-                result.paths.append(path)
+                result.paths.add(tuple(path))
                 result.points.add(pos)
 
             # Traverse
-            visited.add(pos)
             for d_x, d_y in directions:
                 new_pos = (x + d_x, y + d_y)
                 dfs(new_pos, path=path)
@@ -73,15 +72,13 @@ def part_one(map: list[list[int]], trailheads: list[Point]) -> int:
 
         print()
         print_path(map, result.paths)
-        total += len(result.points)
+        total_points += len(result.points)
+        total_paths += len(result.paths)
         # break
 
-    return total
-
-
-def part_two(sizes: list[int]) -> int:
-    # Parse data positions
-    return 0
+    print(f"Part one: {total_points}")
+    print(f"Part two: {total_paths}")
+    return total_points
 
 
 if __name__ == "__main__":
@@ -103,5 +100,4 @@ if __name__ == "__main__":
     print(map)
     print(trailheads)
 
-    print(f"Part one: {part_one(map, trailheads)}")
-    print(f"Part two: {part_two(map)}")
+    part_one(map, trailheads)
