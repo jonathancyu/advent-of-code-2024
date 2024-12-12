@@ -16,6 +16,13 @@ Point = tuple[int, int]
 directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
 
+@dataclass
+class Region:
+    plant: str
+    points: set[Point]
+    perimeter: int
+
+
 def print_path(map, region):
     result = [["."] * len(map[0]) for _ in range(len(map))]
     for x, y in region:
@@ -26,32 +33,37 @@ def print_path(map, region):
 
 def part_one(map: list[list[str]]) -> int:
     X, Y = len(map), len(map[0])
-    regions = []
-    current_region: set[Point] = set()
+    regions: list[Region] = []
     visited: set[Point] = set()
 
-    def dfs(point, plant: str):
+    def dfs(point, region: Region):
         x, y = point
         if point in visited or not 0 <= x < X or not 0 <= y < Y or map[x][y] != plant:
+            if point not in region.points:
+                region.perimeter += 1
             return
-        print(point, plant)
 
         visited.add(point)
-        current_region.add(point)
+        region.points.add(point)
         for d_x, d_y in directions:
-            dfs((x + d_x, y + d_y), plant)
+            dfs((x + d_x, y + d_y), region)
 
     for i, row in enumerate(map):
-        for j, val in enumerate(row):
-            current_region = set()
-            dfs((i, j), val)
-            print(current_region)
-            if len(current_region) > 0:
-                regions.append(current_region)
+        for j, plant in enumerate(row):
+            region = Region(plant, set(), 0)
+            dfs((i, j), region)
+            if len(region.points) > 0:
+                regions.append(region)
+
+    total = 0
     for region in regions:
-        print()
-        print_path(map, region)
-    return 0
+        area = len(region.points)
+        perim = region.perimeter
+        total += area * perim
+        print(area, perim)
+        print_path(map, region.points)
+
+    return total
 
 
 if __name__ == "__main__":
