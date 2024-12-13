@@ -14,42 +14,64 @@ import math
 Vector = tuple[int, int]
 
 
+class UnionFind:
+    def __init__(self, n: int):
+        self.par = {}
+        self.rank = {}
+
+        for i in range(n):
+            # Setting parent to itself makes union logic simpler
+            self.par[i] = i
+            self.rank[i] = 0
+
+    def find(self, n: int):
+        # Finds the root of x
+        p = self.par[n]  # Starting from the NODE:
+        # Path compression: As we find, shift each node up.
+        # Ideally, the tree's rank is onl 1.
+        while p != self.par[p]:  # Root node's parent is itself
+            self.par[p] = self.par[self.par[p]]
+            p = self.par[p]
+
+        return p
+
+    def union(self, n1: int, n2: int):
+        # Union roots of n1 and n2 together
+        p1, p2 = self.find(n1), self.find(n2)
+        if p1 == p2:
+            # Already the same tree, thus:
+            # 1) duplicate edge
+            # or
+            # 2) cycle exists (if undirected)
+            return False
+
+            # Merge shorter tree into taller tree
+        if self.rank[p1] > self.rank[p2]:
+            self.par[p2] = p1
+        elif self.rank[p1] < self.rank[p2]:
+            self.par[p1] = p2
+        else:
+            # Heights are equal, so rank will increase.
+            self.par[p1] = p2
+            self.rank[p2] += 1
+        return True
+
+
 directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
 
-def to_lateral(direction):
-    x, y = direction
-    return [(-y, x), (y, -x)]
-
-
 @dataclass
-class Side:
-    inside: list[Vector]
-    direction: Vector
+class Edge:
+    point: Vector
+    outwards: Vector
 
 
 @dataclass
 class Region:
     plant: str
     points: set[Vector]
-    sides: list[Side]
+    edges: list[Edge]
     perimeter: int
-
-    def add_side(self, inside: Vector, direction: Vector):
-        x, y = inside
-        lateral = [(x + d_x, y + d_y) for d_x, d_y in to_lateral(direction)]
-        for side in self.sides:
-            if direction != side.direction:
-                continue
-            if inside in side.inside:
-                return
-            for point in side.inside:
-                if point in lateral:
-                    side.inside.append(inside)
-                    print("attached")
-                    return
-        print("new side")
-        self.sides.append(Side([inside], direction))
 
 
 def print_path(map, region):
@@ -95,6 +117,44 @@ def part_one(map: list[list[str]]) -> int:
     return total
 
 
+@dataclass
+class Side:
+    inside: list[Vector]
+    direction: Vector
+
+
+def to_lateral(direction):
+    x, y = direction
+    return [(-y, x), (y, -x)]
+
+
+def count_sides(region: Region) -> int:
+    lookup: dict[tuple[Vector, Vector], int] = {}
+    # Merge edges into sides.
+    sides = UnionFind(len(region.edges))
+    for i, edge in enumerate(region.edges):
+        x, y = edge.point
+        lookup[(edge.point, edge.outwards)] = i  # Add to lookup
+        # Find adjacent sides
+        neighbors = [(x + d_x, y + d_y) for d_x, d_y in to_lateral(edge.outwards)]
+        adjacent_sides = [
+            lookup[(pos, edge.outwards)]
+            for pos in neighbors
+            if (pos, edge.outwards) in lookup
+        ]
+        if len(adjacent_sides) == 1:
+            sides.union(i, adjacent_sides[0])
+        elif len(adjacent_sides) == 2:
+            sides.union(i, adjacent_sides[0])
+            sides.union(i, adjacent_sides[1])
+
+    # Get final joined edges
+    all_sides = set()
+    for i in range(len(region.edges)):
+        all_sides.add(sides.find(i))
+    return len(all_sides)
+
+
 def part_two(map: list[list[str]]) -> int:
     X, Y = len(map), len(map[0])
     regions: list[Region] = []
@@ -106,19 +166,14 @@ def part_two(map: list[list[str]]) -> int:
             if point not in region.points and prev is not None:
                 p_x, p_y = prev
                 direction = (x - p_x, y - p_y)
-                region.add_side(prev, direction)
+                region.edges.append(Edge(point, direction))
                 region.perimeter += 1
             return
 
         visited.add(point)
         region.points.add(point)
-        # update sides
         for d_x, d_y in directions:
-            n_x, n_y = x + d_x, y + d_y
-            next_point = (n_x, n_y)
-            if not 0 <= n_x < X or not 0 <= n_y < Y or map[n_x][n_y] != region.plant:
-                region.add_side(point, (d_x, d_y))
-            dfs(next_point, region, point)
+            dfs((x + d_x, y + d_y), region, point)
 
     for i, row in enumerate(map):
         for j, plant in enumerate(row):
@@ -131,17 +186,7 @@ def part_two(map: list[list[str]]) -> int:
     for region in regions:
         print_path(map, region.points)
         # print(f"sides: {len(region.sides)}")
-        area = len(region.points) * len(region.sides)
-        print(f"{region.plant}: {len(region.sides)} {area}")
-        lookup = defaultdict(list)
-        for side in region.sides:
-            for pt in side.inside:
-                lookup[pt].append(side.direction)
-        print(f"sides: {" " + "\n".join(sorted([str(x) for x in region.sides]))}")
-        for k in sorted(lookup.keys()):
-            print(f"{k}: {lookup[k]}")
-        print()
-        total += area
+        total += len(region.points) * count_sides(region)
 
     return total
 
