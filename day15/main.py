@@ -71,6 +71,35 @@ def part_one(map: list[list[str]], pos: Vector, moves: list[str]) -> int:
     return total
 
 
+def to_wide(map: list[list[str]]) -> list[list[str]]:
+    result = []
+    for row in map:
+        new_row = []
+        for char in row:
+            if char == "O":
+                new_row.extend(["[", "]"])
+            else:
+                new_row.extend([char, char])
+        result.append(new_row)
+    return result
+
+
+def part_two(map: list[list[str]], pos: Vector, moves: list[str]) -> int:
+    p_x, p_y = pos
+    pos = (p_x, 2 * p_y)
+    map = to_wide(map)
+    print_map(map, pos)
+    # for move in moves:
+    #     pos = make_move_one(map, pos, move)
+
+    total = 0
+    for i, row in enumerate(map):
+        for j, val in enumerate(row):
+            if val == "O":
+                total += (100 * i) + j
+    return total
+
+
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("-f", "--file", type=Path)
@@ -96,7 +125,7 @@ if __name__ == "__main__":
     for line in lines[i + 1 :]:
         for move in line.strip():
             moves.append(move)
-    print(moves)
 
     print_map(map, pos)
     print(f"part_one: {part_one(map, pos, moves)}")
+    print(f"part_two: {part_two(map, pos, moves)}")
