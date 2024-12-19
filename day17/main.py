@@ -71,11 +71,9 @@ def part_one(program: list[tuple[int, int]], reg: dict[Register, int]) -> str:
     }
     pointer = 0
     while True:
-        if pointer >= len(program):
+        if pointer >= len(program) or len(output) > 2*len(program):
             break
         op, arg = program[pointer]
-        print(f"{pointer}: {op}, {arg}")
-        print(f"{reg}")
         assert op in ops
 
         result = ops[op](arg)
@@ -83,11 +81,20 @@ def part_one(program: list[tuple[int, int]], reg: dict[Register, int]) -> str:
             pointer = result
         else:
             pointer += 1
-        print(output)
-        print()
-    print(f"{reg}")
-
     return ",".join(str(x) for x in output)
+
+
+def part_two(program: list[tuple[int, int]], reg: dict[Register, int]) -> int:
+    expected = ",".join(str(x).strip("()").replace(" ", "") for x in program)
+    print(expected)
+    a = 0
+    while True:
+        new_reg = deepcopy(reg)
+        new_reg["A"] = a
+        output = part_one(program, new_reg)
+        if output == expected:
+            return a
+        a += 1
 
 
 if __name__ == "__main__":
@@ -110,4 +117,5 @@ if __name__ == "__main__":
     literals = [int(x) for x in line.strip().split(",")]
     program = list(zip(literals[::2], literals[1::2]))
     print(registers, program)
-    print(f"Part one: {part_one(program, registers)}")
+    print(f"Part one: {part_one(program, deepcopy(registers))}")
+    print(f"Part two: {part_two(program, deepcopy(registers))}")
