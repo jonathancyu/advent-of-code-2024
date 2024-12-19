@@ -31,7 +31,7 @@ def to_vec(line: str) -> Vector:
 directions = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
 
-def part_one(points: list[Vector], size: Vector, steps: int) -> int:
+def part_one(points: list[Vector], size: Vector, steps: int) -> float:
     X, Y = size
     target = (X - 1, Y - 1)
 
@@ -47,7 +47,6 @@ def part_one(points: list[Vector], size: Vector, steps: int) -> int:
     while q:
         cur_dist, pos = heapq.heappop(q)
         x, y = pos
-        print(pos)
         if not 0 <= x < X or not 0 <= y < Y or pos in visited:
             continue
         visited.add(pos)
@@ -58,9 +57,17 @@ def part_one(points: list[Vector], size: Vector, steps: int) -> int:
             if new_dist < dist[neighbor]:
                 dist[neighbor] = new_dist
             heapq.heappush(q, (new_dist, neighbor))
-    print(dist)
 
-    return int(dist[target])
+    return dist[target]
+
+
+def part_two(points: list[Vector], size: Vector) -> Optional[Vector]:
+    # TODO: modified dijktra - when we add a point, update neighboring distances
+    for i in range(len(points)):
+        if part_one(points, size, i) == math.inf:
+            return points[i - 1]
+
+    return None
 
 
 if __name__ == "__main__":
@@ -77,3 +84,4 @@ if __name__ == "__main__":
         points.append(to_vec(line))
     sys.setrecursionlimit(5000)  # XD
     print(f"Part one: {part_one(points, size, steps)}")
+    print(f"Part two: {part_two(points, size)}")
