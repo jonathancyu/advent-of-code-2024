@@ -51,7 +51,6 @@ def part_one(program: list[tuple[int, int]], reg: dict[Register, int]) -> str:
         reg["B"] = reg["B"] ^ reg["C"]
 
     def out(arg) -> None:
-        print(f"{arg} -> {combo[arg]()}")
         output.append(combo[arg]() % 8)
 
     def bdv(arg) -> None:
@@ -85,9 +84,10 @@ def part_one(program: list[tuple[int, int]], reg: dict[Register, int]) -> str:
         else:
             pointer += 1
         print(output)
+        print()
     print(f"{reg}")
 
-    return ""
+    return ",".join(str(x) for x in output)
 
 
 if __name__ == "__main__":
@@ -110,4 +110,4 @@ if __name__ == "__main__":
     literals = [int(x) for x in line.strip().split(",")]
     program = list(zip(literals[::2], literals[1::2]))
     print(registers, program)
-    part_one(program, registers)
+    print(f"Part one: {part_one(program, registers)}")
