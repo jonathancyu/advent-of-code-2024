@@ -7,6 +7,7 @@ from pathlib import Path
 from itertools import product
 from dataclasses import dataclass
 from collections import defaultdict, deque
+import heapq
 from typing import Callable, Counter, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm.auto import tqdm
@@ -36,24 +37,30 @@ def part_one(points: list[Vector], size: Vector, steps: int) -> int:
 
     corrupted = set(points[:steps])
 
-    q: deque[tuple[Vector, set[Vector]]] = deque()
     start = (0, 0)
-    q.append((start, set()))
-    min_dist = math.inf
+    # Dijkstra's algorithm
+    dist: dict[Vector, float] = defaultdict(lambda: math.inf)
+    dist[start] = 0
+
+    q: list[tuple[float, Vector]] = [(0, start)]
+    visited: set[Vector] = corrupted
     while q:
-        pos, visited = q.popleft()
+        cur_dist, pos = heapq.heappop(q)
         x, y = pos
-        if pos in visited or not 0 <= x < X or not 0 <= y < Y or pos in corrupted:
-            continue
-        if pos == target:
-            min_dist = min(len(visited), min_dist)
+        print(pos)
+        if not 0 <= x < X or not 0 <= y < Y or pos in visited:
             continue
         visited.add(pos)
 
         for d_x, d_y in directions:
-            q.append(((x + d_x, y + d_y), visited.copy()))
+            neighbor = (x + d_x, y + d_y)
+            new_dist = cur_dist + 1
+            if new_dist < dist[neighbor]:
+                dist[neighbor] = new_dist
+            heapq.heappush(q, (new_dist, neighbor))
+    print(dist)
 
-    return int(min_dist)
+    return int(dist[target])
 
 
 if __name__ == "__main__":
