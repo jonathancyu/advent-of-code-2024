@@ -36,10 +36,36 @@ def part_one(towels: list[str], patterns: list[str]) -> int:
     possible = 0
     for pattern in patterns:
         if dfs(pattern):
-            print(pattern)
             possible += 1
 
     return possible
+
+
+def part_two(towels: list[str], patterns: list[str]) -> int:
+    dp = {}
+
+    def dfs(pattern: str) -> int:
+        if pattern in dp:
+            return dp[pattern]
+        combos = 0
+        for towel in towels:
+            if not pattern.startswith(towel):
+                continue
+            if towel == pattern:
+                combos += 1
+                continue
+            towel_len = len(towel)
+            combos += dfs(pattern[towel_len:])
+        dp[pattern] = combos
+        return combos
+
+    total = 0
+    for pattern in patterns:
+        combos = dfs(pattern)
+        total += combos
+        print(f"{pattern} -> {combos}")
+
+    return total
 
 
 if __name__ == "__main__":
@@ -52,4 +78,4 @@ if __name__ == "__main__":
     patterns = [x.strip() for x in lines[2:]]
     print(towels, patterns)
     print(f"Part one: {part_one(towels, patterns)}")
-    # print(f"Part two: {part_two(points, size)}")
+    print(f"Part two: {part_two(towels, patterns)}")
